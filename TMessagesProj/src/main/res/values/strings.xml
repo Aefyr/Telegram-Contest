@@ -589,8 +589,10 @@
     <string name="GroupSettingsTitle">Group Settings</string>
     <string name="ChannelSettingsTitle">Channel Settings</string>
     <string name="TypePrivate">Private</string>
+    <string name="TypePrivateRestricted">Private restricted</string>
     <string name="TypePublic">Public</string>
     <string name="TypePrivateGroup">Private</string>
+    <string name="TypePrivateRestrictedGroup">Private restricted</string>
     <string name="TypePublicGroup">Public</string>
     <string name="TypeLocationGroup">Link</string>
     <string name="TypeLocationGroupEdit">Tap to add a permanent link</string>
@@ -3857,6 +3859,11 @@
     <string name="LinkActionShare">Share</string>
     <string name="InviteRevokedHint">The invite link has been revoked.</string>
     <string name="ExpiredLink">Expired Link</string>
+    <!-- saving content -->
+    <string name="SavingContentHeader">Saving Content</string>
+    <string name="RestrictSavingContent">Restrict saving content</string>
+    <string name="RestrictSavingContentHelpGroup">Participants won\'t be able to forward messages from this group or save media files.</string>
+    <string name="RestrictSavingContentHelpChannel">Participants won\'t be able to forward messages from this channel or save media files.</string>
     <!--contacts shortcuts-->
     <string name="ContactShortcutMessage">Message %1$s</string>
     <string name="ContactShortcutVoiceCall">Voice call %1$s</string>
