@@ -1832,11 +1832,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (currentUser != null) {
             MediaController.getInstance().stopMediaObserver();
         }
-        if (currentEncryptedChat != null) {
+        if (shouldFlagSecureBeEnabled()) {
             try {
-                if (Build.VERSION.SDK_INT >= 23 && (SharedConfig.passcodeHash.length() == 0 || SharedConfig.allowScreenCapture)) {
-                    AndroidUtilities.setFlagSecure(this, false);
-                }
+                AndroidUtilities.setFlagSecure(this, false);
             } catch (Throwable e) {
                 FileLog.e(e);
             }
@@ -7694,13 +7692,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         chatScrollHelper.setScrollListener(this::invalidateMessagesVisiblePart);
         chatScrollHelper.setAnimationCallback(chatScrollHelperCallback);
 
-        try {
-            if (currentEncryptedChat != null && Build.VERSION.SDK_INT >= 23 && (SharedConfig.passcodeHash.length() == 0 || SharedConfig.allowScreenCapture)) {
-                AndroidUtilities.setFlagSecure(this, true);
-            }
-        } catch (Throwable e) {
-            FileLog.e(e);
-        }
+        invalidateFlagSecure();
         if (oldMessage != null) {
             chatActivityEnterView.setFieldText(oldMessage);
         }
@@ -7861,6 +7853,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         emojiAnimationsOverlay = new EmojiAnimationsOverlay(ChatActivity.this, contentView, chatListView, currentAccount, dialog_id, threadMessageId);
         return fragmentView;
+    }
+
+    private boolean shouldFlagSecureBeEnabled() {
+        return (currentEncryptedChat != null || (currentChat != null && currentChat.noforwards)) && Build.VERSION.SDK_INT >= 23 && (SharedConfig.passcodeHash.length() == 0 || SharedConfig.allowScreenCapture);
+    }
+
+    private void invalidateFlagSecure() {
+        try {
+            if (shouldFlagSecureBeEnabled()) {
+                AndroidUtilities.setFlagSecure(this, true);
+            } else {
+                AndroidUtilities.setFlagSecure(this, false);
+            }
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
     }
 
     private void openForwardingPreview() {
@@ -12580,6 +12588,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         ActionBarMenuItem copyItem = actionBar.createActionMode().getItem(copy);
         copyItem.setVisibility(canCopySelection() ? View.VISIBLE : View.GONE);
+
+        updateVisibleRows();
+
+        //Flag secure
+        invalidateFlagSecure();
     }
 
     private boolean areChatForwardsRestricted() {

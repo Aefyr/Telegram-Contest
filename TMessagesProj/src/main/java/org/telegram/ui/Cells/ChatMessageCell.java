@@ -738,6 +738,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private TLRPC.User currentUser;
     private TLRPC.Chat currentChat;
+    private TLRPC.Chat actualCurrentChat;
     private TLRPC.FileLocation currentPhoto;
     private String currentNameString;
 
@@ -2889,6 +2890,26 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return false;
     }
 
+    private boolean isChatDataChanged(MessageObject messageObject) {
+        MessagesController messagesController = MessagesController.getInstance(currentAccount);
+        TLRPC.Chat oldActualCurrentChat = actualCurrentChat;
+        actualCurrentChat = messagesController.getInstance(currentAccount).getChat(messageObject.getChatId());
+
+        if(oldActualCurrentChat == actualCurrentChat) {
+            return false;
+        }
+
+        if(oldActualCurrentChat == null || actualCurrentChat == null) {
+            return true;
+        }
+
+        if(actualCurrentChat.noforwards != oldActualCurrentChat.noforwards) {
+            return true;
+        }
+
+        return false;
+    }
+
     public ImageReceiver getPhotoImage() {
         return photoImage;
     }
@@ -3070,7 +3091,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet) ||
                 lastPostAuthor != messageObject.messageOwner.post_author ||
                 wasPinned != isPinned ||
-                newReply != lastReplyMessage;
+                newReply != lastReplyMessage ||
+                isChatDataChanged(messageObject);
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
         if (drawCommentButton || drawSideButton == 3 && !((hasDiscussion && messageObject.isLinkedToChat(linkedChatId) || isRepliesChat) && (currentPosition == null || currentPosition.siblingHeights == null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 || currentPosition.siblingHeights != null && (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0))) {
@@ -9599,7 +9621,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private boolean checkNeedDrawShareButton(MessageObject messageObject) {
-        if (currentMessageObject.deleted || currentMessageObject.isSponsored()) {
+        if (currentMessageObject.deleted || currentMessageObject.isSponsored() || (actualCurrentChat != null && actualCurrentChat.noforwards)) {
             return false;
         }
         if (currentPosition != null) {
