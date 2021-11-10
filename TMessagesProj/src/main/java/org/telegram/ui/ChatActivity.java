@@ -12579,7 +12579,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
+    private boolean noForwards = false;
     private void updateNoForwards() {
+        setNoForwardsEnabled(currentChat != null && currentChat.noforwards);
+        updateVisibleRows();
+    }
+
+    private void setNoForwardsEnabled(boolean enabled) {
+        if(enabled == noForwards) {
+            return;
+        }
+        noForwards = enabled;
+
         //Selection
         setSelectionForwardButtonsEnabled(canForwardSelection(), true);
 
@@ -12589,26 +12600,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         ActionBarMenuItem copyItem = actionBar.createActionMode().getItem(copy);
         copyItem.setVisibility(canCopySelection() ? View.VISIBLE : View.GONE);
 
-        updateVisibleRows();
-
         //Flag secure
         invalidateFlagSecure();
     }
 
-    private boolean areChatForwardsRestricted() {
-        return currentChat != null && currentChat.noforwards;
-    }
-
     private boolean canForwardSelection() {
-        return cantForwardMessagesCount == 0 && !areChatForwardsRestricted();
+        return cantForwardMessagesCount == 0 && !noForwards;
     }
 
     private boolean canSaveSelection() {
-        return ((canSaveMusicCount > 0 && canSaveDocumentsCount == 0) || (canSaveMusicCount == 0 && canSaveDocumentsCount > 0)) && cantSaveMessagesCount == 0 && !areChatForwardsRestricted();
+        return ((canSaveMusicCount > 0 && canSaveDocumentsCount == 0) || (canSaveMusicCount == 0 && canSaveDocumentsCount > 0)) && cantSaveMessagesCount == 0 && !noForwards;
     }
 
     private boolean canCopySelection() {
-        return (selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0) && !areChatForwardsRestricted();
+        return (selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0) && !noForwards;
     }
 
     private void processRowSelect(View view, boolean outside, float touchX, float touchY) {
@@ -14146,6 +14151,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (chatActivityEnterView != null) {
                     chatActivityEnterView.setDialogId(dialog_id, currentAccount);
                 }
+                updateNoForwards();
             }
             if (avatarContainer != null && updateSubtitle) {
                 avatarContainer.updateSubtitle(true);
