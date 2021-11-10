@@ -246,6 +246,8 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.musicDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.moreMusicDidLoad);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
 
         containerView = new FrameLayout(context) {
 
@@ -1201,6 +1203,29 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         updateTitle(false);
         updateRepeatButton();
         updateEmptyView();
+        updateNoForwards();
+    }
+
+    private void updateNoForwards() {
+        boolean noForwards = false;
+        MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
+        if(messageObject != null && !MediaController.getInstance().currentPlaylistIsGlobalSearch()) {
+            long did = messageObject.getDialogId();
+            if(DialogObject.isChatDialog(did)) {
+                TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
+                noForwards = chat != null && chat.noforwards;
+            }
+        }
+
+        if(!noForwards) {
+            optionsButton.showSubItem(1);
+            optionsButton.showSubItem(2);
+            optionsButton.showSubItem(5);
+        } else {
+            optionsButton.hideSubItem(1);
+            optionsButton.hideSubItem(2);
+            optionsButton.hideSubItem(5);
+        }
     }
 
     private void startForwardRewindingSeek() {
@@ -1615,6 +1640,21 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
                     seekBarView.setBufferedProgress(bufferedProgress);
                 }
             }
+        } else if(id == NotificationCenter.chatInfoDidLoad) {
+            TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
+            MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
+            if(messageObject != null && !MediaController.getInstance().currentPlaylistIsGlobalSearch()) {
+                long did = messageObject.getDialogId();
+                if(DialogObject.isChatDialog(did) && chatFull.id == -did) {
+                    updateNoForwards();
+                }
+            }
+        } else if(id == NotificationCenter.updateInterfaces) {
+            int updateMask = (Integer) args[0];
+            MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
+            if ((updateMask & MessagesController.UPDATE_MASK_CHAT) != 0 && messageObject != null && !MediaController.getInstance().currentPlaylistIsGlobalSearch()) {
+                updateNoForwards();
+            }
         }
     }
 
@@ -1680,6 +1720,8 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.musicDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.moreMusicDidLoad);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
         DownloadController.getInstance(currentAccount).removeLoadingFileObserver(this);
     }
 
