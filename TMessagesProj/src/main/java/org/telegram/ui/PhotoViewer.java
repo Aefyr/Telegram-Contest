@@ -10081,6 +10081,15 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 return;
             }
             newMessageObject = imagesArr.get(switchingToIndex);
+
+            if(parentChatActivity == null && (currentMessageObject == null || newMessageObject.getChatId() != currentMessageObject.getChatId())) {
+                TLRPC.Chat currentChat = MessagesController.getInstance(currentAccount).getChat(newMessageObject.getChatId());
+                if(currentChat != null) {
+                    noForwards = currentChat.noforwards;
+                    invalidateFlagSecure();
+                }
+            }
+
             isVideo = newMessageObject.isVideo();
             boolean isInvoice = newMessageObject.isInvoice();
             if (isInvoice) {
