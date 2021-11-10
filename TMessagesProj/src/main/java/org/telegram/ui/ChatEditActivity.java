@@ -1004,7 +1004,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 boolean infoWasEmpty = info == null;
                 info = chatFull;
                 historyHidden = !ChatObject.isChannel(currentChat) || info.hidden_prehistory;
-                updateFields(false);
+                updateFields(true);
                 if (infoWasEmpty) {
                     loadLinksCount();
                 }

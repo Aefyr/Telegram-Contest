@@ -476,12 +476,7 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
 
         if(currentChat.noforwards != isSavingContentRestricted) {
             currentChat.noforwards = isSavingContentRestricted;
-
             getMessagesController().toggleNoForwards(chatId, isSavingContentRestricted, isChannel, this);
-            TLRPC.Chat chat = getMessagesController().getChat(chatId);
-            if (chat != null) {
-                chat.noforwards = isSavingContentRestricted;
-            }
         }
 
         finishFragment();
