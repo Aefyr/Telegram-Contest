@@ -1116,6 +1116,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingDidReset);
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingPlayStateChanged);
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingDidStart);
+        profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
+        profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.chatInfoDidLoad);
 
         for (int a = 0; a < 10; a++) {
             //cellCache.add(new SharedPhotoVideoCell(context));
@@ -1432,7 +1434,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             actionModeLayout.addView(forwardItem, new LinearLayout.LayoutParams(AndroidUtilities.dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
             actionModeViews.add(forwardItem);
             forwardItem.setOnClickListener(v -> onActionBarItemClick(forward));
+
+            updateForwardsAvailability();
         }
+
         deleteItem = new ActionBarMenuItem(context, null, Theme.getColor(Theme.key_actionBarActionModeDefaultSelector), Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2), false);
         deleteItem.setIcon(R.drawable.msg_delete);
         deleteItem.setContentDescription(LocaleController.getString("Delete", R.string.Delete));
@@ -2140,6 +2145,29 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         switchToCurrentSelectedMode(false);
         if (hasMedia[0] >= 0) {
             loadFastScrollData(false);
+        }
+    }
+
+    private void updateForwardsAvailability() {
+        if(forwardItem == null) {
+            return;
+        }
+
+        boolean forwardsAvailable = true;
+
+        if(DialogObject.isChatDialog(dialog_id)) {
+            TLRPC.Chat currentChat = profileActivity.getMessagesController().getChat(-dialog_id);
+            if(currentChat.noforwards) {
+                forwardsAvailable = false;
+            }
+        }
+
+        if(!forwardsAvailable) {
+            forwardItem.setEnabled(false);
+            forwardItem.setAlpha(0.5f);
+        } else {
+            forwardItem.setEnabled(true);
+            forwardItem.setAlpha(1f);
         }
     }
 
@@ -2853,6 +2881,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingDidReset);
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingPlayStateChanged);
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingDidStart);
+        profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
+        profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
     }
 
     private void checkCurrentTabValid() {
@@ -3800,6 +3830,14 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
             }
+        } else if (id == NotificationCenter.updateInterfaces) {
+            int updateMask = (Integer) args[0];
+            if ((updateMask & MessagesController.UPDATE_MASK_CHAT) != 0) {
+                updateForwardsAvailability();
+            }
+        } else if(id == NotificationCenter.chatInfoDidLoad) {
+            TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
+            updateForwardsAvailability();
         }
     }
 
