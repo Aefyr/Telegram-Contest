@@ -912,6 +912,8 @@
     <string name="SponsoredMessageAlertText">See https://telegram.org</string>
     <string name="SponsoredMessageAlertLearnMore">LEARN MORE</string>
     <string name="SponsoredMessageAlertLearnMoreUrl">https://telegram.org</string>
+    <string name="NoForwardsInfoChannel">Forwards from this channel are restricted.</string>
+    <string name="NoForwardsInfoGroup">Forwards from this group are restricted.</string>
     <string name="InstantViewNightMode">The dark theme will turn automatically during night time</string>
     <string name="InstantViewReference">Reference</string>
     <string name="IsSendingGame">%1$s is playing a game...</string>
