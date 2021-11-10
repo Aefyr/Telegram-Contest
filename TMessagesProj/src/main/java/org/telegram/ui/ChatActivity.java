@@ -12361,44 +12361,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 ActionBarMenuItem editItem = actionBar.createActionMode().getItem(edit);
                 ActionBarMenuItem forwardItem = actionBar.createActionMode().getItem(forward);
 
-                if (prevCantForwardCount == 0 && cantForwardMessagesCount != 0 || prevCantForwardCount != 0 && cantForwardMessagesCount == 0) {
-                    forwardButtonAnimation = new AnimatorSet();
-                    ArrayList<Animator> animators = new ArrayList<>();
-                    if (forwardItem != null) {
-                        forwardItem.setEnabled(cantForwardMessagesCount == 0);
-                        animators.add(ObjectAnimator.ofFloat(forwardItem, View.ALPHA, cantForwardMessagesCount == 0 ? 1.0f : 0.5f));
-                    }
-                    if (forwardButton != null) {
-                        forwardButton.setEnabled(cantForwardMessagesCount == 0);
-                        animators.add(ObjectAnimator.ofFloat(forwardButton, View.ALPHA, cantForwardMessagesCount == 0 ? 1.0f : 0.5f));
-                    }
-                    forwardButtonAnimation.playTogether(animators);
-                    forwardButtonAnimation.setDuration(100);
-                    forwardButtonAnimation.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            forwardButtonAnimation = null;
-                        }
-                    });
-                    forwardButtonAnimation.start();
-                } else {
-                    if (forwardItem != null) {
-                        forwardItem.setEnabled(cantForwardMessagesCount == 0);
-                        forwardItem.setAlpha(cantForwardMessagesCount == 0 ? 1.0f : 0.5f);
-                    }
-                    if (forwardButton != null) {
-                        forwardButton.setEnabled(cantForwardMessagesCount == 0);
-                        forwardButton.setAlpha(cantForwardMessagesCount == 0 ? 1.0f : 0.5f);
-                    }
-                }
+                setSelectionForwardButtonsEnabled(canForwardSelection(), true);
                 if (saveItem != null) {
-                    saveItem.setVisibility(((canSaveMusicCount > 0 && canSaveDocumentsCount == 0) || (canSaveMusicCount == 0 && canSaveDocumentsCount > 0)) && cantSaveMessagesCount == 0 ? View.VISIBLE : View.GONE);
+                    saveItem.setVisibility(canSaveSelection() ? View.VISIBLE : View.GONE);
                     saveItem.setContentDescription(canSaveMusicCount > 0 ? LocaleController.getString("SaveToMusic", R.string.SaveToMusic) : LocaleController.getString("SaveToDownloads", R.string.SaveToDownloads));
                 }
 
                 int copyVisible = copyItem.getVisibility();
                 int starVisible = starItem.getVisibility();
-                copyItem.setVisibility(selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0 ? View.VISIBLE : View.GONE);
+                copyItem.setVisibility(canCopySelection() ? View.VISIBLE : View.GONE);
                 starItem.setVisibility(getMediaDataController().canAddStickerToFavorites() && (selectedMessagesCanStarIds[0].size() + selectedMessagesCanStarIds[1].size()) == selectedCount ? View.VISIBLE : View.GONE);
                 int newCopyVisible = copyItem.getVisibility();
                 int newStarVisible = starItem.getVisibility();
@@ -12550,6 +12521,81 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
         }
+    }
+
+    private boolean selectionForwardButtonsEnabled = true;
+
+    private void setSelectionForwardButtonsEnabled(boolean enabled, boolean animate) {
+        if(enabled == selectionForwardButtonsEnabled) {
+            return;
+        }
+        selectionForwardButtonsEnabled = enabled;
+
+        ActionBarMenuItem forwardItem = actionBar.createActionMode().getItem(forward);
+
+
+        if (forwardButtonAnimation != null) {
+            forwardButtonAnimation.cancel();
+            forwardButtonAnimation = null;
+        }
+
+        if(animate) {
+            forwardButtonAnimation = new AnimatorSet();
+            ArrayList<Animator> animators = new ArrayList<>();
+            if (forwardItem != null) {
+                forwardItem.setEnabled(enabled);
+                animators.add(ObjectAnimator.ofFloat(forwardItem, View.ALPHA, enabled ? 1.0f : 0.5f));
+            }
+            if (forwardButton != null) {
+                forwardButton.setEnabled(enabled);
+                animators.add(ObjectAnimator.ofFloat(forwardButton, View.ALPHA,enabled ? 1.0f : 0.5f));
+            }
+            forwardButtonAnimation.playTogether(animators);
+            forwardButtonAnimation.setDuration(100);
+            forwardButtonAnimation.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    forwardButtonAnimation = null;
+                }
+            });
+            forwardButtonAnimation.start();
+        } else {
+            if (forwardItem != null) {
+                forwardItem.setEnabled(enabled);
+                forwardItem.setAlpha(enabled ? 1.0f : 0.5f);
+            }
+            if (forwardButton != null) {
+                forwardButton.setEnabled(enabled);
+                forwardButton.setAlpha(enabled ? 1.0f : 0.5f);
+            }
+        }
+    }
+
+    private void updateNoForwards() {
+        //Selection
+        setSelectionForwardButtonsEnabled(canForwardSelection(), true);
+
+        ActionBarMenuItem saveItem = actionBar.createActionMode().getItem(save_to);
+        saveItem.setVisibility(canSaveSelection() ? View.VISIBLE : View.GONE);
+
+        ActionBarMenuItem copyItem = actionBar.createActionMode().getItem(copy);
+        copyItem.setVisibility(canCopySelection() ? View.VISIBLE : View.GONE);
+    }
+
+    private boolean areChatForwardsRestricted() {
+        return currentChat != null && currentChat.noforwards;
+    }
+
+    private boolean canForwardSelection() {
+        return cantForwardMessagesCount == 0 && !areChatForwardsRestricted();
+    }
+
+    private boolean canSaveSelection() {
+        return ((canSaveMusicCount > 0 && canSaveDocumentsCount == 0) || (canSaveMusicCount == 0 && canSaveDocumentsCount > 0)) && cantSaveMessagesCount == 0 && !areChatForwardsRestricted();
+    }
+
+    private boolean canCopySelection() {
+        return (selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0) && !areChatForwardsRestricted();
     }
 
     private void processRowSelect(View view, boolean outside, float touchX, float touchY) {
@@ -14536,6 +14582,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 showGigagroupConvertAlert();
                 long prevLinkedChatId = chatInfo != null ? chatInfo.linked_chat_id : 0;
                 chatInfo = chatFull;
+                TLRPC.Chat newChat = getMessagesController().getChat(currentChat.id);
+                if (newChat != null) {
+                    currentChat = newChat;
+                }
+
                 groupCall = getMessagesController().getGroupCall(currentChat.id, true);
                 if (ChatObject.isChannel(currentChat) && currentChat.megagroup && fragmentContextView != null) {
                     fragmentContextView.checkCall(openAnimationStartTime == 0 || SystemClock.elapsedRealtime() < openAnimationStartTime + 150);
@@ -14640,6 +14691,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (pendingRequestsDelegate != null) {
                     pendingRequestsDelegate.setChatInfo(chatInfo, true);
                 }
+                updateNoForwards();
             }
         } else if (id == NotificationCenter.chatInfoCantLoad) {
             long chatId = (Long) args[0];
