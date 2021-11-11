@@ -9128,6 +9128,24 @@ public class MessagesController extends BaseController implements NotificationCe
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
+    public void setDefaultSendAs(long chatId, TLRPC.Peer defaultSendAsPeer) {
+        TLRPC.TL_messages_saveDefaultSendAs  req = new TLRPC.TL_messages_saveDefaultSendAs();
+        req.peer = getInputPeer(-chatId);
+        req.send_as = getInputPeer(defaultSendAsPeer);
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (response instanceof TLRPC.TL_boolTrue) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    TLRPC.ChatFull info = getChatFull(chatId);
+                    if(info != null) {
+                        info.default_send_as = defaultSendAsPeer;
+                        getMessagesStorage().updateChatInfo(info, false);
+                        getNotificationCenter().postNotificationName(NotificationCenter.chatInfoDidLoad, info, 0, false, false);
+                    }
+                });
+            }
+        }, ConnectionsManager.RequestFlagInvokeAfter);
+    }
+
     public void updateChatAbout(long chatId, String about, TLRPC.ChatFull info) {
         TLRPC.TL_messages_editChatAbout req = new TLRPC.TL_messages_editChatAbout();
         req.peer = getInputPeer(-chatId);

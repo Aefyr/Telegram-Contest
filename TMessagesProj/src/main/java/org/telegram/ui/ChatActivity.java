@@ -14691,6 +14691,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (chatActivityEnterView != null) {
                     chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands, true);
+                    chatActivityEnterView.setCurrentSendAsPeer(chatFull.default_send_as);
+                    chatActivityEnterView.setSendAsPeerSelectorVisible(chatFull.default_send_as != null);
                 }
                 if (mentionsAdapter != null) {
                     mentionsAdapter.setBotsCount(botsCount);
@@ -21430,6 +21432,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return false;
         } else if (chatActivityEnterView != null && chatActivityEnterView.botCommandsMenuIsShowing()) {
             chatActivityEnterView.hideBotCommands();
+            return false;
+        } else if(chatActivityEnterView != null && chatActivityEnterView.isSendAsMenuShown()) {
+            chatActivityEnterView.hideSendAsMenu();
             return false;
         }
         if (backToPreviousFragment != null) {
