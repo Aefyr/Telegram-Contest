@@ -20294,12 +20294,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             scrimPopupContainerLayout.addView(popupLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, showMessageSeen ? -8 : 0, 0, 0));
 
+            FrameLayout noForwardsLayout = null;
             if(noForwards) {
                 TextView noForwardsText = new TextView(contentView.getContext());
                 noForwardsText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
                 noForwardsText.setTextColor(getThemedColor(Theme.key_actionBarDefaultSubmenuItem));
                 noForwardsText.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8), AndroidUtilities.dp(16), AndroidUtilities.dp(8));
-                if(ChatObject.isChannel(currentChat)) {
+                if(ChatObject.isChannel(currentChat) && !ChatObject.isMegagroup(currentChat)) {
                     noForwardsText.setText(LocaleController.getString("NoForwardsInfoChannel", R.string.NoForwardsInfoChannel));
                 } else {
                     noForwardsText.setText(LocaleController.getString("NoForwardsInfoGroup", R.string.NoForwardsInfoGroup));
@@ -20307,12 +20308,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 Drawable shadowDrawable2 = ContextCompat.getDrawable(contentView.getContext(), R.drawable.popup_fixed_alert).mutate();
                 shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
-                FrameLayout noForwardsLayout = new FrameLayout(contentView.getContext());
-                noForwardsLayout.setMinimumWidth(AndroidUtilities.dp(200));
+                noForwardsLayout = new FrameLayout(contentView.getContext());
                 FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
                 noForwardsLayout.addView(noForwardsText, layoutParams);
                 noForwardsLayout.setBackground(shadowDrawable2);
-                scrimPopupContainerLayout.addView(noForwardsLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, -8, 0, 0));
             }
 
             scrimPopupWindow = new ActionBarPopupWindow(scrimPopupContainerLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
@@ -20376,6 +20375,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             if (messageSeenView != null) {
                 messageSeenView.getLayoutParams().width = scrimPopupContainerLayout.getMeasuredWidth() - AndroidUtilities.dp(16);
+            }
+            if(noForwardsLayout != null) {
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scrimPopupContainerLayout.getMeasuredWidth(), LinearLayout.LayoutParams.WRAP_CONTENT);
+                layoutParams.setMargins(0, AndroidUtilities.dp(-8), 0, 0);
+                scrimPopupContainerLayout.addView(noForwardsLayout, layoutParams);
+                scrimPopupContainerLayout.measure(View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), View.MeasureSpec.AT_MOST));
             }
             int popupX = v.getLeft() + (int) x - scrimPopupContainerLayout.getMeasuredWidth() + backgroundPaddings.left - AndroidUtilities.dp(28);
             if (popupX < AndroidUtilities.dp(6)) {
