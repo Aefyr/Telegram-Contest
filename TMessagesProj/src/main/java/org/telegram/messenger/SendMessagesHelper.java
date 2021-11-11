@@ -1974,7 +1974,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     req.with_my_score = messages.size() == 1 && messages.get(0).messageOwner.with_my_score;
                     if(sendAsPeer != null) {
                         req.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                        req.flags |= 4096;
+                        req.flags |= 8192;
                     }
 
                     final ArrayList<TLRPC.Message> newMsgObjArr = arr;
@@ -3024,7 +3024,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             TLRPC.ChatFull chatFull = getMessagesController().getChatFull(request.peer.channel_id);
             if(chatFull != null && chatFull.default_send_as != null) {
                 request.send_as = getMessagesStorage().getMessagesController().getInputPeer(chatFull.default_send_as);
-                request.flags |= 4096;
+                request.flags |= 8192;
             }
         } else if (request.peer instanceof TLRPC.TL_inputPeerChat) {
             request.silent = MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + -peer.chat_id, false);
@@ -3663,7 +3663,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     reqSend.random_id = newMsg.random_id;
                     if(sendAsPeer != null) {
                         reqSend.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                        reqSend.flags |= 4096;
+                        reqSend.flags |= 8192;
                     }
                     if (newMsg.reply_to != null && newMsg.reply_to.reply_to_msg_id != 0) {
                         reqSend.flags |= 1;
@@ -3997,7 +3997,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             }
                             if(sendAsPeer != null) {
                                 request.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                                request.flags |= 4096;
+                                request.flags |= 8192;
                             }
                             delayedMessage.sendRequest = request;
                         }
@@ -4041,7 +4041,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                         if(sendAsPeer != null) {
                             request.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                            request.flags |= 4096;
+                            request.flags |= 8192;
                         }
 
                         if (delayedMessage != null) {
@@ -4405,7 +4405,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
                 if(sendAsPeer != null) {
                     reqSend.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                    reqSend.flags |= 4096;
+                    reqSend.flags |= 8192;
                 }
                 performSendMessageRequest(reqSend, newMsgObj, null, null, parentObject, params, scheduleDate != 0);
             } else if (type == 9) {
@@ -4424,7 +4424,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
                 if(sendAsPeer != null) {
                     reqSend.send_as = getMessagesController().getInputPeer(sendAsPeer);
-                    reqSend.flags |= 4096;
+                    reqSend.flags |= 8192;
                 }
                 reqSend.query_id = Utilities.parseLong(params.get("query_id"));
                 reqSend.id = params.get("id");
