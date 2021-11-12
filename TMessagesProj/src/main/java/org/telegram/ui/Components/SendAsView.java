@@ -3,6 +3,7 @@ package org.telegram.ui.Components;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -61,7 +62,10 @@ public class SendAsView extends FrameLayout {
 
     private OnDismissListener onDismissListener;
 
+    private FlickerLoadingView flickerLoadingView;
     private FrameLayout wrappedFakePopupLayout;
+    private RecyclerListView recycler;
+
     private AnimatorSet visibilityAnimation = new AnimatorSet();
 
     private boolean isShown = true;
@@ -101,10 +105,17 @@ public class SendAsView extends FrameLayout {
         //Setup header
         HeaderCell header = new HeaderCell(context, Theme.key_windowBackgroundWhiteBlueHeader, 17, 7, false);
         header.setText(LocaleController.getString("SendAsHeader", R.string.SendAsHeader));
-        container.addView(header, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f));
+        container.addView(header, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        //Setup recycler container
+        FrameLayout recyclerContainer = new FrameLayout(context);
+        LayoutTransition layoutTransition = new LayoutTransition();
+        layoutTransition.enableTransitionType(LayoutTransition.CHANGING);
+        recyclerContainer.setLayoutTransition(layoutTransition);
+        container.addView(recyclerContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f));
 
         //Setup recycler
-        RecyclerListView recycler = new RecyclerListView(getContext());
+        recycler = new RecyclerListView(getContext());
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         recycler.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
@@ -130,8 +141,18 @@ public class SendAsView extends FrameLayout {
         });
         sendAsPeerAdapter = new SendAsPeerAdapter();
         recycler.setAdapter(sendAsPeerAdapter);
-        container.addView(recycler, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 1f));
+        recyclerContainer.addView(recycler, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
+        //Flicker
+        flickerLoadingView = new FlickerLoadingView(context);
+        flickerLoadingView.setColors(Theme.key_actionBarDefaultSubmenuBackground, Theme.key_listSelector, null);
+        flickerLoadingView.setViewType(FlickerLoadingView.USERS_TYPE);
+        flickerLoadingView.setIsSingleCell(true);
+        flickerLoadingView.showDate(false);
+        flickerLoadingView.setItemsCount(3);
+        recyclerContainer.addView(flickerLoadingView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 8, 0, 16, 0));
+
+        invalidateState();
         dismiss(false);
     }
 
@@ -141,9 +162,13 @@ public class SendAsView extends FrameLayout {
 
     private void invalidateState() {
         if (loadingPeers) {
-            //TODO show loading
+            flickerLoadingView.setVisibility(VISIBLE);
+            recycler.setVisibility(GONE);
             return;
         }
+
+        flickerLoadingView.setVisibility(GONE);
+        recycler.setVisibility(VISIBLE);
 
         if (availableSendAsPeers == null) {
             sendAsPeerAdapter.setPeers(null);
@@ -182,11 +207,6 @@ public class SendAsView extends FrameLayout {
         sendAsPeerAdapter.setPeers(sendAsPeers);
     }
 
-    private void setAvailableSendAsPeers(TLRPC.TL_channels_sendAsPeers peers) {
-        availableSendAsPeers = peers;
-        invalidateState();
-    }
-
     public void setSelectedSendAsPeer(TLRPC.Peer peer) {
         selectedSendAsPeer = peer;
         invalidateState();
@@ -199,6 +219,8 @@ public class SendAsView extends FrameLayout {
         }
 
         loadingPeers = true;
+        //Debounce loading
+        AndroidUtilities.runOnUIThread(this::invalidateState, 200);
 
         TLRPC.TL_channels_getSendAs request = new TLRPC.TL_channels_getSendAs();
         request.peer = MessagesController.getInputPeer(currentChat);
@@ -299,6 +321,10 @@ public class SendAsView extends FrameLayout {
         }
     }
 
+    public boolean isShown() {
+        return isShown;
+    }
+
     private static class SendAsPeerAdapter extends RecyclerListView.SelectionAdapter {
 
         private List<SendAsPeer> peers;
@@ -334,11 +360,10 @@ public class SendAsView extends FrameLayout {
 
         private class SendAsPeerCell extends FrameLayout {
 
-            BackupImageView avatarImageView;
+            private BackupImageView avatarImageView;
+            private TextDetailCell detailCell;
 
-            TextDetailCell detailCell;
-
-            AvatarDrawable avatarDrawable = new AvatarDrawable();
+            private AvatarDrawable avatarDrawable = new AvatarDrawable();
 
             private Paint selectionCirclePaint;
 
@@ -357,6 +382,7 @@ public class SendAsView extends FrameLayout {
 
                 detailCell = new TextDetailCell(context);
                 addView(detailCell, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.CENTER_VERTICAL, 47, 0, 13, 0));
+
 
                 setWillNotDraw(false);
             }
