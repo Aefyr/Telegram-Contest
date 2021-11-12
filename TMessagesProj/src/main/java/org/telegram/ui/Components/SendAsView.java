@@ -96,7 +96,7 @@ public class SendAsView extends FrameLayout {
                     super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(300), MeasureSpec.AT_MOST), heightMeasureSpec);
                 }
                 setPivotX(AndroidUtilities.dp(8));
-                setPivotY(getMeasuredWidth() - AndroidUtilities.dp(8));
+                setPivotY(getMeasuredHeight() - AndroidUtilities.dp(8));
             }
         };
         wrappedFakePopupLayout.setBackground(shadowDrawable2);
