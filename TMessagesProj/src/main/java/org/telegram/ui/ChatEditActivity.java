@@ -1013,6 +1013,8 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             int mask = (Integer) args[0];
             if ((mask & MessagesController.UPDATE_MASK_AVATAR) != 0) {
                 setAvatar();
+            } else if ((mask & MessagesController.UPDATE_MASK_CHAT) != 0) {
+                updateFields(true);
             }
         }
     }

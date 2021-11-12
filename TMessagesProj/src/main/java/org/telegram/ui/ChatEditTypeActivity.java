@@ -460,8 +460,7 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         }
 
         if(currentChat.noforwards != isSavingContentRestricted) {
-            currentChat.noforwards = isSavingContentRestricted;
-            getMessagesController().toggleNoForwards(chatId, isSavingContentRestricted, isChannel, this);
+            getMessagesController().toggleNoForwards(chatId, isSavingContentRestricted);
         }
 
         finishFragment();
@@ -496,7 +495,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
                 return false;
             } else {
                 getMessagesController().updateChannelUserName(chatId, newUserName);
-                currentChat.username = newUserName;
             }
         }
         return true;

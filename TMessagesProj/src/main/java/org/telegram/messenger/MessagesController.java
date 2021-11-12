@@ -9120,16 +9120,27 @@ public class MessagesController extends BaseController implements NotificationCe
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
-    public void toggleNoForwards(long chatId, boolean enabled, boolean isChannel, BaseFragment parentFragment) {
+    public void toggleNoForwards(long chatId, boolean enabled) {
         TLRPC.TL_messages_toggleNoForwards  req = new TLRPC.TL_messages_toggleNoForwards();
         req.peer = getInputPeer(-chatId);
         req.enabled = enabled;
         getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                processUpdates((TLRPC.Updates) response, false);
+            if (response instanceof TLRPC.TL_boolTrue) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    TLRPC.Chat chat = getChat(chatId);
+                    if(chat != null) {
+                        chat.noforwards = enabled;
+
+                        ArrayList<TLRPC.Chat> arrayList = new ArrayList<>();
+                        arrayList.add(chat);
+                        getMessagesStorage().putUsersAndChats(null, arrayList, true, true);
+                        getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_CHAT);
+
+                        AndroidUtilities.runOnUIThread(() -> loadFullChat(chatId, 0, true), 1000);
+                    }
+                });
+            } else if(error != null && error.text.equals("CHAT_NOT_MODIFIED")) {
                 AndroidUtilities.runOnUIThread(() -> loadFullChat(chatId, 0, true), 1000);
-            } else {
-                AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, parentFragment, req, isChannel));
             }
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
@@ -9186,7 +9197,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     getMessagesStorage().putUsersAndChats(null, arrayList, true, true);
                     getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_CHAT);
 
-                    //Need to update send as, for some reason server doesn't send an update after username change
+                    //For some reason server doesn't send an update to update stuff like default send as
                     AndroidUtilities.runOnUIThread(() -> loadFullChat(chatId, 0, true), 1000);
                 });
             }
