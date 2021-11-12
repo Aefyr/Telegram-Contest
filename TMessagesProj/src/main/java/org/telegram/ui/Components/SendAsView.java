@@ -95,8 +95,8 @@ public class SendAsView extends FrameLayout {
                 } else {
                     super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(300), MeasureSpec.AT_MOST), heightMeasureSpec);
                 }
-                setPivotX(getMeasuredWidth() - AndroidUtilities.dp(8));
-                setPivotY(AndroidUtilities.dp(8));
+                setPivotX(AndroidUtilities.dp(8));
+                setPivotY(getMeasuredWidth() - AndroidUtilities.dp(8));
             }
         };
         wrappedFakePopupLayout.setBackground(shadowDrawable2);
@@ -272,7 +272,8 @@ public class SendAsView extends FrameLayout {
             visibilityAnimation = new AnimatorSet();
             visibilityAnimation.playTogether(
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.ALPHA, 0f, 1f),
-                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.TRANSLATION_Y, AndroidUtilities.dp(6), 0),
+                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_X, 0f, 1f),
+                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_Y, 0f, 1f),
                     ObjectAnimator.ofFloat(this, View.ALPHA, 0f, 1f));
             visibilityAnimation.setDuration(180);
             visibilityAnimation.addListener(new AnimatorListenerAdapter() {
@@ -306,7 +307,8 @@ public class SendAsView extends FrameLayout {
             visibilityAnimation = new AnimatorSet();
             visibilityAnimation.playTogether(
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.ALPHA, 0f),
-                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.TRANSLATION_Y, AndroidUtilities.dp(5)),
+                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_X, 0f),
+                    ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_Y, 0f),
                     ObjectAnimator.ofFloat(this, View.ALPHA, 0f));
             visibilityAnimation.setDuration(180);
             visibilityAnimation.addListener(new AnimatorListenerAdapter() {
