@@ -6048,6 +6048,12 @@ public class MessagesController extends BaseController implements NotificationCe
             if (ChatObject.shouldSendAnonymously(getChat(-dialogId))) {
                 return false;
             }
+            TLRPC.ChatFull chatInfo = getChatFull(-dialogId);
+            if(chatInfo != null && chatInfo.default_send_as != null) {
+                if(UserConfig.getInstance(currentAccount).getCurrentUser().id != chatInfo.default_send_as.user_id) {
+                    return false;
+                }
+            }
         } else {
             TLRPC.User user = getUser(dialogId);
             if (user != null) {
