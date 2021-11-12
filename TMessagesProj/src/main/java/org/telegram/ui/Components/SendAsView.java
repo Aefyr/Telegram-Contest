@@ -109,9 +109,6 @@ public class SendAsView extends FrameLayout {
 
         //Setup recycler container
         FrameLayout recyclerContainer = new FrameLayout(context);
-        LayoutTransition layoutTransition = new LayoutTransition();
-        layoutTransition.enableTransitionType(LayoutTransition.CHANGING);
-        recyclerContainer.setLayoutTransition(layoutTransition);
         container.addView(recyclerContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f));
 
         //Setup recycler
