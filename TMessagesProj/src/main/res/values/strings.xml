@@ -1241,6 +1241,7 @@
     <string name="ForwardingFromNames">From %s</string>
     <string name="SendAsHeader">Send message as...</string>
     <string name="SendAsPersonalAccount">personal account</string>
+    <string name="ForwardsRestrictedError">Source chat or channel for this message has forwards restricted.</string>
     <!--notification-->
     <string name="MessageLifetimeChanged">%1$s set the self-destruct timer to %2$s</string>
     <string name="MessageLifetimeChangedOutgoing">You set the self-destruct timer to %1$s</string>
