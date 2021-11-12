@@ -7119,6 +7119,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (!ChatObject.isChannel(currentChat) || currentChat.megagroup) {
             chatActivityEnterView.setBotInfo(botInfo);
         }
+        chatActivityEnterView.setCurrentSendAsPeer(chatInfo != null ? chatInfo.default_send_as : null);
         contentView.addView(chatActivityEnterView, contentView.getChildCount() - 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM));
 
         chatActivityEnterTopView = new ChatActivityEnterTopView(context) {
