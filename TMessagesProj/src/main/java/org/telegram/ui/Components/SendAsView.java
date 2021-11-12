@@ -3,7 +3,6 @@ package org.telegram.ui.Components;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
-import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -89,7 +88,13 @@ public class SendAsView extends FrameLayout {
         wrappedFakePopupLayout = new FrameLayout(context) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(300), MeasureSpec.AT_MOST), heightMeasureSpec);
+                int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+                if (heightMode == MeasureSpec.AT_MOST) {
+                    int height = Math.min(MeasureSpec.getSize(heightMeasureSpec), AndroidUtilities.dp(480));
+                    super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(300), MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST));
+                } else {
+                    super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(300), MeasureSpec.AT_MOST), heightMeasureSpec);
+                }
                 setPivotX(getMeasuredWidth() - AndroidUtilities.dp(8));
                 setPivotY(AndroidUtilities.dp(8));
             }
