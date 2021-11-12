@@ -7119,7 +7119,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (!ChatObject.isChannel(currentChat) || currentChat.megagroup) {
             chatActivityEnterView.setBotInfo(botInfo);
         }
-        chatActivityEnterView.setCurrentSendAsPeer(chatInfo != null ? chatInfo.default_send_as : null);
+        chatActivityEnterView.setCurrentSendAsPeer(chatInfo != null ? chatInfo.default_send_as : null, false);
         contentView.addView(chatActivityEnterView, contentView.getChildCount() - 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM));
 
         chatActivityEnterTopView = new ChatActivityEnterTopView(context) {
@@ -14692,7 +14692,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (chatActivityEnterView != null) {
                     chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands, true);
-                    chatActivityEnterView.setCurrentSendAsPeer(chatFull.default_send_as);
+                    chatActivityEnterView.setCurrentSendAsPeer(chatFull.default_send_as, true);
                     chatActivityEnterView.setSendAsPeerSelectorVisible(chatFull.default_send_as != null);
                 }
                 if (mentionsAdapter != null) {

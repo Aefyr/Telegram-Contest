@@ -6548,9 +6548,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         return true;
     }
 
-    public void setCurrentSendAsPeer(TLRPC.Peer peer) {
+    public void setCurrentSendAsPeer(TLRPC.Peer peer, boolean animated) {
         if(sendAsButton != null) {
-            sendAsButton.setCurrentPeer(peer);
+            sendAsButton.setCurrentPeer(peer, animated);
             sendAsMenuContainer.setSelectedSendAsPeer(peer);
             sendAsMenuContainer.loadSendAsPeers();
         }
