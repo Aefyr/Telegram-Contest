@@ -3826,6 +3826,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             emojiView.setChatInfo(info);
         }
         setSlowModeTimer(chatInfo.slowmode_next_send_date);
+
+        setCurrentSendAsPeer(chatInfo.default_send_as, true);
+        setSendAsPeerSelectorVisible(chatInfo.default_send_as != null);
     }
 
     public void checkRoundVideo() {

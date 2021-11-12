@@ -9185,6 +9185,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     arrayList.add(chat);
                     getMessagesStorage().putUsersAndChats(null, arrayList, true, true);
                     getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_CHAT);
+
+                    //Need to update send as, for some reason server doesn't send an update after username change
+                    AndroidUtilities.runOnUIThread(() -> loadFullChat(chatId, 0, true), 1000);
                 });
             }
         }, ConnectionsManager.RequestFlagInvokeAfter);

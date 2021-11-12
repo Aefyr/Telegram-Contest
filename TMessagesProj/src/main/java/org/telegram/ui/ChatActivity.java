@@ -14692,8 +14692,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (chatActivityEnterView != null) {
                     chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands, true);
-                    chatActivityEnterView.setCurrentSendAsPeer(chatFull.default_send_as, true);
-                    chatActivityEnterView.setSendAsPeerSelectorVisible(chatFull.default_send_as != null);
                 }
                 if (mentionsAdapter != null) {
                     mentionsAdapter.setBotsCount(botsCount);
