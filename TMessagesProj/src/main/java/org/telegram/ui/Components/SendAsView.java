@@ -5,6 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
@@ -333,28 +335,30 @@ public class SendAsView extends FrameLayout {
         private class SendAsPeerCell extends FrameLayout {
 
             BackupImageView avatarImageView;
-            GroupCreateCheckBox checkBox;
 
             TextDetailCell detailCell;
 
             AvatarDrawable avatarDrawable = new AvatarDrawable();
 
+            private Paint selectionCirclePaint;
+
+            private boolean isActive;
+
             public SendAsPeerCell(Context context) {
                 super(context);
+
+                selectionCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                selectionCirclePaint.setStyle(Paint.Style.STROKE);
+                selectionCirclePaint.setStrokeWidth(AndroidUtilities.dp(2));
+
                 avatarImageView = new BackupImageView(context);
                 addView(avatarImageView, LayoutHelper.createFrame(44, 44, Gravity.CENTER_VERTICAL, 15, 0, 0, 0));
                 avatarImageView.setRoundRadius(AndroidUtilities.dp(22));
 
                 detailCell = new TextDetailCell(context);
-
                 addView(detailCell, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.CENTER_VERTICAL, 47, 0, 13, 0));
 
-                checkBox = new GroupCreateCheckBox(context);
-                checkBox.setChecked(true, false);
-                checkBox.setCheckScale(0.9f);
-                checkBox.setInnerRadDiff(AndroidUtilities.dp(1.5f));
-                checkBox.setColorKeysOverrides(Theme.key_chats_unreadCounterText, Theme.key_chats_unreadCounter, Theme.key_chats_menuBackground);
-                addView(checkBox, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP, 41, 35, 0, 0));
+                setWillNotDraw(false);
             }
 
             @Override
@@ -363,6 +367,8 @@ public class SendAsView extends FrameLayout {
             }
 
             public void bind(SendAsPeer sendAsPeer) {
+                isActive = sendAsPeer.isActive();
+
                 if (sendAsPeer instanceof UserSendAsPeer) {
                     UserSendAsPeer userPeer = (UserSendAsPeer) sendAsPeer;
                     TLRPC.User user = userPeer.getUser();
@@ -371,7 +377,6 @@ public class SendAsView extends FrameLayout {
                     ImageLocation imageLocation = ImageLocation.getForUser(user, ImageLocation.TYPE_SMALL);
                     avatarImageView.setImage(imageLocation, "50_50", avatarDrawable, user);
                     detailCell.setTextAndValue(ContactsController.formatName(user.first_name, user.last_name), LocaleController.getString("SendAsPersonalAccount", R.string.SendAsPersonalAccount), false);
-                    checkBox.setVisibility(sendAsPeer.isActive() ? VISIBLE : GONE);
                 } else if (sendAsPeer instanceof ChatSendAsPeer) {
                     ChatSendAsPeer chatPeer = (ChatSendAsPeer) sendAsPeer;
                     TLRPC.Chat chat = chatPeer.getChat();
@@ -380,9 +385,30 @@ public class SendAsView extends FrameLayout {
                     ImageLocation imageLocation = ImageLocation.getForChat(chat, ImageLocation.TYPE_SMALL);
                     avatarImageView.setImage(imageLocation, "50_50", avatarDrawable, chat);
                     detailCell.setTextAndValue(chat.title, LocaleController.formatPluralString("Subscribers", chat.participants_count), false);
-                    checkBox.setVisibility(sendAsPeer.isActive() ? VISIBLE : GONE);
                 } else {
                     throw new IllegalArgumentException("Unsupported SendAsPeer subclass: " + sendAsPeer.getClass().getCanonicalName());
+                }
+
+                if (isActive) {
+                    avatarImageView.setScaleX(0.82f);
+                    avatarImageView.setScaleY(0.82f);
+                } else {
+                    avatarImageView.setScaleX(1f);
+                    avatarImageView.setScaleY(1f);
+                }
+
+                invalidate();
+            }
+
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+
+                if (isActive) {
+                    selectionCirclePaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
+                    float cx = avatarImageView.getLeft() + avatarImageView.getMeasuredWidth() / 2f;
+                    float cy = avatarImageView.getTop() + avatarImageView.getMeasuredHeight() / 2f;
+                    canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionCirclePaint);
                 }
             }
         }
