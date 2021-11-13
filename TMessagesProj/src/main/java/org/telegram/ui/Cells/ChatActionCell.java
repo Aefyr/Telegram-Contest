@@ -70,6 +70,10 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         default void needOpenInviteLink(TLRPC.TL_chatInviteExported invite) {
 
         }
+
+        default void didClickDate(int date, boolean scheduled) {
+
+        }
     }
 
     public interface ThemeDelegate extends Theme.ResourcesProvider {
@@ -91,6 +95,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     private int textXLeft;
     private int previousWidth;
     private boolean imagePressed;
+    private boolean datePressed;
 
     TextPaint textPaint;
 
@@ -109,6 +114,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
 
     private MessageObject currentMessageObject;
     private int customDate;
+    private boolean isDateScheduled;
     private CharSequence customText;
 
     private String overrideBackground;
@@ -162,6 +168,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             return;
         }
         customDate = date;
+        isDateScheduled = scheduled;
         customText = newText;
         updateTextInternal(inLayout);
     }
@@ -300,6 +307,9 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 if (currentMessageObject.type == 11 && imageReceiver.isInsideImage(x, y)) {
                     imagePressed = true;
                     result = true;
+                } else if(currentMessageObject.isDateObject) {
+                    datePressed = true;
+                    result = true;
                 }
                 if (result) {
                     startCheckLongPress();
@@ -322,6 +332,19 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                     if (!imageReceiver.isInsideImage(x, y)) {
                         imagePressed = false;
                     }
+                }
+            }
+            if(datePressed) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    datePressed = false;
+                    if (delegate != null) {
+                        delegate.didClickDate(customDate, isDateScheduled);
+                        playSoundEffect(SoundEffectConstants.CLICK);
+                    }
+                } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+                    datePressed = false;
+                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    //idk, does date need a hitbox?
                 }
             }
         }

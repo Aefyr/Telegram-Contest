@@ -1490,6 +1490,80 @@ public class AlertsCreator {
         }
     }
 
+    public static void createDeleteMessagesRangeDialogAlert(BaseFragment fragment, int dayCount, TLRPC.User user, Theme.ResourcesProvider resourcesProvider, MessagesStorage.BooleanCallback onProcessRunnable) {
+        if (fragment == null || fragment.getParentActivity() == null || user == null) {
+            return;
+        }
+        int account = fragment.getCurrentAccount();
+
+        Context context = fragment.getParentActivity();
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
+        long selfUserId = UserConfig.getInstance(account).getClientUserId();
+
+        CheckBoxCell[] cell = new CheckBoxCell[1];
+
+        TextView messageTextView = new TextView(context);
+        messageTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        messageTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
+
+        FrameLayout frameLayout = new FrameLayout(context) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                if (cell[0] != null) {
+                    setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight() + cell[0].getMeasuredHeight() + AndroidUtilities.dp(7));
+                }
+            }
+        };
+        builder.setView(frameLayout);
+
+        TextView textView = new TextView(context);
+        textView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+        textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        textView.setLines(1);
+        textView.setMaxLines(1);
+        textView.setSingleLine(true);
+        textView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+
+        textView.setText(LocaleController.getString("DeleteRangeDeleteMessages", R.string.DeleteRangeDeleteMessages));
+
+        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 24, 11, 24, 0));
+        frameLayout.addView(messageTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 24, 57, 24, 9));
+
+
+        final boolean[] deleteForAll = new boolean[1];
+
+        cell[0] = new CheckBoxCell(context, 1, resourcesProvider);
+        cell[0].setBackgroundDrawable(Theme.getSelectorDrawable(false));
+        cell[0].setText(LocaleController.formatString("DeleteMessagesOptionAlso", R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", false, false);
+
+        cell[0].setPadding(LocaleController.isRTL ? AndroidUtilities.dp(16) : AndroidUtilities.dp(8), 0, LocaleController.isRTL ? AndroidUtilities.dp(8) : AndroidUtilities.dp(16), 0);
+        frameLayout.addView(cell[0], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.LEFT, 0, 0, 0, 0));
+        cell[0].setOnClickListener(v -> {
+            CheckBoxCell cell1 = (CheckBoxCell) v;
+            deleteForAll[0] = !deleteForAll[0];
+            cell1.setChecked(deleteForAll[0], true);
+        });
+
+        messageTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatPluralString("DeleteRangeDeleteAlert", dayCount)));
+
+        builder.setPositiveButton(LocaleController.getString("DeleteRangeDelete", R.string.DeleteRangeDelete), (dialogInterface, i) -> {
+            if (onProcessRunnable != null) {
+                onProcessRunnable.run(deleteForAll[0]);
+            }
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        AlertDialog alertDialog = builder.create();
+        fragment.showDialog(alertDialog);
+        TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+        if (button != null) {
+            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+        }
+    }
+
     public static void createCallDialogAlert(BaseFragment fragment, TLRPC.User user, boolean videoCall) {
         if (fragment == null || fragment.getParentActivity() == null || user == null || UserObject.isDeleted(user) || UserConfig.getInstance(fragment.getCurrentAccount()).getClientUserId() == user.id) {
             return;

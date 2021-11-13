@@ -308,6 +308,22 @@
     <string name="ImporImportingStickersService">Importing stickers...</string>
     <string name="ImportHeader">Import messages and media to...</string>
     <string name="ImportHeaderContacts">Or choose one of your contacts</string>
+    <string name="DeleteRangeDays_zero">%1$d days</string>
+    <string name="DeleteRangeDays_one">%1$d day</string>
+    <string name="DeleteRangeDays_two">%1$d days</string>
+    <string name="DeleteRangeDays_few">%1$d days</string>
+    <string name="DeleteRangeDays_many">%1$d days</string>
+    <string name="DeleteRangeDays_other">%1$d days</string>
+    <string name="DeleteRangeSelectDays">Select days</string>
+    <string name="DeleteRangeClearHistory">Clear history</string>
+    <string name="DeleteRangeDeleteMessages">Delete messages</string>
+    <string name="DeleteRangeDelete">Delete</string>
+    <string name="DeleteRangeDeleteAlert_zero">Are you sure you want to delete all messages for the **%1$d selected days?**</string>
+    <string name="DeleteRangeDeleteAlert_one">Are you sure you want to delete all messages for the **%1$d selected day?**</string>
+    <string name="DeleteRangeDeleteAlert_two">Are you sure you want to delete all messages for the **%1$d selected days?**</string>
+    <string name="DeleteRangeDeleteAlert_few">Are you sure you want to delete all messages for the **%1$d selected days?**</string>
+    <string name="DeleteRangeDeleteAlert_many">Are you sure you want to delete all messages for the **%1$d selected days?**</string>
+    <string name="DeleteRangeDeleteAlert_other">Are you sure you want to delete all messages for the **%1$d selected days?**</string>
     <!--widgets-->
     <string name="EditWidget">Edit Widget</string>
     <string name="EditWidgetContactsInfo">Display shortcuts to your most important chats for quick access.\n\nIf nobody is selected, your most frequent contacts will be shown in this widget.</string>

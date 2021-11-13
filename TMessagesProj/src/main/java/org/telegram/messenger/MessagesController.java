@@ -5100,6 +5100,31 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
+    public void deleteMessagesRange(long did, int minDate, int maxDate, boolean deleteForOthers) {
+        TLRPC.InputPeer peer = getInputPeer(did);
+
+        TLRPC.TL_messages_deleteHistory req = new TLRPC.TL_messages_deleteHistory();
+        req.peer = peer;
+        req.max_id = Integer.MAX_VALUE;
+        req.just_clear = !deleteForOthers;
+        req.revoke = deleteForOthers;
+        req.min_date = minDate;
+        req.max_date = maxDate;
+        req.flags |= 4;
+        req.flags |= 8;
+
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                TLRPC.TL_messages_affectedHistory res = (TLRPC.TL_messages_affectedHistory) response;
+                if (res.offset > 0) {
+                    deleteMessagesRange(did, minDate, maxDate, deleteForOthers);
+                }
+                //TODO Delete local messages manually instead of bullying the server. But I'm not doing it now, have you seen MessagesStorage class??
+                processNewDifferenceParams(-1, res.pts, -1, 0);
+            }
+        }, ConnectionsManager.RequestFlagInvokeAfter);
+    }
+
     public void saveGif(Object parentObject, TLRPC.Document document) {
         if (parentObject == null || !MessageObject.isGifDocument(document)) {
             return;

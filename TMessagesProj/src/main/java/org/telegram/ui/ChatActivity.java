@@ -23413,6 +23413,19 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                         chatActivityEnterView.didPressedBotButton(button, messageObject, messageObject);
                     }
+
+                    @Override
+                    public void didClickDate(int date, boolean scheduled) {
+                        if(scheduled || !DialogObject.isUserDialog(dialog_id) || DialogObject.isEncryptedDialog(dialog_id)) {
+                            return;
+                        }
+
+                        Bundle bundle = new Bundle();
+                        bundle.putLong("dialog_id", dialog_id);
+                        DeleteMessagesRangeActivity calendarActivity = new DeleteMessagesRangeActivity(bundle, date);
+
+                        presentFragment(calendarActivity);
+                    }
                 });
             } else if (viewType == 2) {
                 view = new ChatUnreadCell(mContext, themeDelegate);
