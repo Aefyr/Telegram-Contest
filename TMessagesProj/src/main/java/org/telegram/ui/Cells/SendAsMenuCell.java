@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ImageLocation;
@@ -27,6 +28,8 @@ public class SendAsMenuCell extends View {
     private Drawable deleteDrawable;
     private ImageReceiver imageReceiver;
     private AvatarDrawable avatarDrawable;
+
+    private Drawable rippleDrawable;
 
     private int backColor;
     private static Paint backPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -50,6 +53,9 @@ public class SendAsMenuCell extends View {
 
         avatarDrawable = new AvatarDrawable();
         avatarDrawable.setTextSize(AndroidUtilities.dp(14));
+
+        rippleDrawable = Theme.createSimpleSelectorCircleDrawable(AndroidUtilities.dp(16), 0, ColorUtils.setAlphaComponent(Color.WHITE, 64));
+        rippleDrawable.setCallback(this);
 
         imageReceiver = new ImageReceiver();
         imageReceiver.setRoundRadius(AndroidUtilities.dp(16));
@@ -215,13 +221,18 @@ public class SendAsMenuCell extends View {
 
             invalidate();
         }
+
+        int cx = AndroidUtilities.dp(20);
+        int cy = AndroidUtilities.dp(24);
+        int radius = AndroidUtilities.dp(16);
+
         canvas.save();
         canvas.scale((1.0f - hiddenProgress), (1.0f - hiddenProgress), AndroidUtilities.dp(20), AndroidUtilities.dp(24));
         imageReceiver.draw(canvas);
         if (closeProgress != 0) {
             float alpha = Color.alpha(backColor) / 255.0f;
             backPaint.setAlpha((int) (255 * closeProgress * alpha));
-            canvas.drawCircle(AndroidUtilities.dp(20), AndroidUtilities.dp(24), AndroidUtilities.dp(16), backPaint);
+            canvas.drawCircle(cx, cy, radius, backPaint);
             canvas.save();
             canvas.rotate(45 * (1.0f - closeProgress), AndroidUtilities.dp(20), AndroidUtilities.dp(24));
             deleteDrawable.setBounds(AndroidUtilities.dp(13), AndroidUtilities.dp(17), AndroidUtilities.dp(27), AndroidUtilities.dp(31));
@@ -229,6 +240,29 @@ public class SendAsMenuCell extends View {
             deleteDrawable.draw(canvas);
             canvas.restore();
         }
+        rippleDrawable.setBounds((int) (cx - radius), (int) (cy - radius), (int) (cx + radius), (int) (cy + radius));
+        rippleDrawable.draw(canvas);
         canvas.restore();
+    }
+
+    @Override
+    protected void drawableStateChanged() {
+        super.drawableStateChanged();
+        if (rippleDrawable != null) {
+            rippleDrawable.setState(getDrawableState());
+        }
+    }
+
+    @Override
+    public boolean verifyDrawable(Drawable drawable) {
+        return rippleDrawable == drawable || super.verifyDrawable(drawable);
+    }
+
+    @Override
+    public void jumpDrawablesToCurrentState() {
+        super.jumpDrawablesToCurrentState();
+        if (rippleDrawable != null) {
+            rippleDrawable.jumpToCurrentState();
+        }
     }
 }
