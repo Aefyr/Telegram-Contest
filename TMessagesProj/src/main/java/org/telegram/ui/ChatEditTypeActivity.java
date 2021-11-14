@@ -459,7 +459,7 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
             return;
         }
 
-        if(currentChat.noforwards != isSavingContentRestricted) {
+        if(currentChat.noforwards != isSavingContentRestricted && currentChat.creator) {
             getMessagesController().toggleNoForwards(chatId, isSavingContentRestricted);
         }
 
