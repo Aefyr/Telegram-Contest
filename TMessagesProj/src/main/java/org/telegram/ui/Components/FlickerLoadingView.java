@@ -34,6 +34,7 @@ public class FlickerLoadingView extends View {
     public final static int MESSAGE_SEEN_TYPE = 13;
     public final static int CHAT_THEMES_TYPE = 14;
     public final static int MEMBER_REQUESTS_TYPE = 15;
+    public final static int SEND_AS_PEERS_TYPE = 16;
 
     private int gradientWidth;
     private LinearGradient gradient;
@@ -492,6 +493,26 @@ public class FlickerLoadingView extends View {
                     break;
                 }
             }
+        } else if (getViewType() == SEND_AS_PEERS_TYPE) {
+            int k = 0;
+            while (h <= getMeasuredHeight()) {
+                int r = AndroidUtilities.dp(23);
+                canvas.drawCircle(checkRtl(paddingLeft + AndroidUtilities.dp(9) + r), h + (AndroidUtilities.dp(64) >> 1), r, paint);
+
+                rectF.set(paddingLeft + AndroidUtilities.dp(68), h + AndroidUtilities.dp(17), paddingLeft + AndroidUtilities.dp(260), h + AndroidUtilities.dp(25));
+                checkRtl(rectF);
+                canvas.drawRoundRect(rectF, AndroidUtilities.dp(4), AndroidUtilities.dp(4), paint);
+
+                rectF.set(paddingLeft + AndroidUtilities.dp(68), h + AndroidUtilities.dp(39), paddingLeft + AndroidUtilities.dp(140), h + AndroidUtilities.dp(47));
+                checkRtl(rectF);
+                canvas.drawRoundRect(rectF, AndroidUtilities.dp(4), AndroidUtilities.dp(4), paint);
+
+                h += getCellHeight(getMeasuredWidth());
+                k++;
+                if (isSingleCell && k >= itemsCount) {
+                    break;
+                }
+            }
         }
         invalidate();
     }
@@ -595,6 +616,8 @@ public class FlickerLoadingView extends View {
             return AndroidUtilities.dp(103);
         } else if (getViewType() == MEMBER_REQUESTS_TYPE) {
             return AndroidUtilities.dp(107);
+        } else if(getViewType() == SEND_AS_PEERS_TYPE) {
+            return AndroidUtilities.dp(62);
         }
         return 0;
     }

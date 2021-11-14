@@ -86,6 +86,21 @@ public class SendAsView extends FrameLayout {
         Drawable shadowDrawable2 = ContextCompat.getDrawable(context, R.drawable.popup_fixed_alert).mutate();
         shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
         wrappedFakePopupLayout = new FrameLayout(context) {
+
+            private int currentAnimatedWidth;
+            private int currentAnimatedHeight;
+
+            private int initialAnimatedWidth;
+            private int initialAnimatedHeight;
+
+            private int lastTargetHeight;
+            private int lastTargetWidth;
+
+            private float sizeAnimationProgress = 0f;
+            private boolean animatingSize = false;
+            private long lastSizeAnimationUpdate;
+            private long sizeAnimationDurationMillis = 180;
+
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 int heightMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -97,9 +112,58 @@ public class SendAsView extends FrameLayout {
                 }
                 setPivotX(AndroidUtilities.dp(8));
                 setPivotY(getMeasuredHeight() - AndroidUtilities.dp(8));
+
+                /*  Tbh animating size through spamming onLayout feels cursed, but performance is fine and I couldn't find another simple way to do it.
+                 *  I mean I guess you could do some scale + translation shenanigans with this container, but I didn't  try it because it only hit me after making this animation.
+                 *  Also depending on child views, it could probably look weird, but in the current case it's fine.
+                 *  Anyway, this animation is only really needed when response takes >200ms or list changes, so, whatever. */
+                if (currentAnimatedWidth == 0 || currentAnimatedHeight == 0 || lastTargetWidth == 0 || lastTargetHeight == 0) {
+                    currentAnimatedWidth = getMeasuredWidth();
+                    currentAnimatedHeight = getMeasuredHeight();
+                    lastTargetWidth = currentAnimatedWidth;
+                    lastTargetHeight = currentAnimatedHeight;
+                }
+
+                if (lastTargetWidth != getMeasuredWidth() || lastTargetHeight != getMeasuredHeight()) {
+                    if (!animatingSize) {
+                        animatingSize = true;
+                        lastSizeAnimationUpdate = System.currentTimeMillis();
+                        sizeAnimationProgress = 0f;
+                        initialAnimatedWidth = lastTargetWidth;
+                        initialAnimatedHeight = lastTargetHeight;
+                    } else {
+                        sizeAnimationProgress = 0f;
+                        initialAnimatedWidth = currentAnimatedWidth;
+                        initialAnimatedHeight = currentAnimatedHeight;
+                    }
+
+                    lastTargetWidth = getMeasuredWidth();
+                    lastTargetHeight = getMeasuredHeight();
+                }
+
+                if (animatingSize) {
+                    long now = System.currentTimeMillis();
+                    long delta = now - lastSizeAnimationUpdate;
+                    sizeAnimationProgress += ((float) delta / (float) sizeAnimationDurationMillis);
+
+                    if (sizeAnimationProgress >= 1) {
+                        animatingSize = false;
+                        sizeAnimationProgress = 1f;
+                        currentAnimatedWidth = getMeasuredWidth();
+                        currentAnimatedHeight = getMeasuredHeight();
+                    } else {
+                        currentAnimatedWidth = (int) ((float) initialAnimatedWidth + ((float) getMeasuredWidth() - ((float) initialAnimatedWidth)) * sizeAnimationProgress);
+                        currentAnimatedHeight = (int) ((float) initialAnimatedHeight + ((float) getMeasuredHeight() - ((float) initialAnimatedHeight)) * sizeAnimationProgress);
+                        AndroidUtilities.runOnUIThread(this::requestLayout, delta < 16 ? 16 - delta : 0);
+                    }
+
+                    lastSizeAnimationUpdate = now;
+                    super.onMeasure(MeasureSpec.makeMeasureSpec(currentAnimatedWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(currentAnimatedHeight, MeasureSpec.EXACTLY));
+                }
             }
         };
         wrappedFakePopupLayout.setBackground(shadowDrawable2);
+        wrappedFakePopupLayout.setClickable(true);
         addView(wrappedFakePopupLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM));
 
         //Setup linear container
@@ -148,11 +212,10 @@ public class SendAsView extends FrameLayout {
         //Flicker
         flickerLoadingView = new FlickerLoadingView(context);
         flickerLoadingView.setColors(Theme.key_actionBarDefaultSubmenuBackground, Theme.key_listSelector, null);
-        flickerLoadingView.setViewType(FlickerLoadingView.USERS_TYPE);
+        flickerLoadingView.setViewType(FlickerLoadingView.SEND_AS_PEERS_TYPE);
         flickerLoadingView.setIsSingleCell(true);
-        flickerLoadingView.showDate(false);
         flickerLoadingView.setItemsCount(3);
-        recyclerContainer.addView(flickerLoadingView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 8, 0, 16, 0));
+        recyclerContainer.addView(flickerLoadingView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 8, 4, 16, 4));
 
         invalidateState();
         dismiss(false);
@@ -164,13 +227,15 @@ public class SendAsView extends FrameLayout {
 
     private void invalidateState() {
         if (loadingPeers) {
-            flickerLoadingView.setVisibility(VISIBLE);
-            recycler.setVisibility(GONE);
+            AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, true);
+            AndroidUtilities.updateViewVisibilityAnimated(recycler, false);
+            recycler.setEnabled(false);
             return;
         }
 
-        flickerLoadingView.setVisibility(GONE);
-        recycler.setVisibility(VISIBLE);
+        AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, false);
+        AndroidUtilities.updateViewVisibilityAnimated(recycler, true);
+        recycler.setEnabled(true);
 
         if (availableSendAsPeers == null) {
             sendAsPeerAdapter.setPeers(null);
@@ -207,6 +272,7 @@ public class SendAsView extends FrameLayout {
         }
 
         sendAsPeerAdapter.setPeers(sendAsPeers);
+        flickerLoadingView.setItemsCount(sendAsPeers.size());
     }
 
     public void setSelectedSendAsPeer(TLRPC.Peer peer) {
@@ -228,24 +294,22 @@ public class SendAsView extends FrameLayout {
         request.peer = MessagesController.getInputPeer(currentChat);
 
         ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            {
-                if (error != null) {
-                    loadingPeers = false;
-                    nextShowWillForceRefresh = true;
-                    dismiss(true);
-                    return;
-                }
-
-                TLRPC.TL_channels_sendAsPeers peers = (TLRPC.TL_channels_sendAsPeers) response;
-
+            if (error != null) {
                 loadingPeers = false;
-                availableSendAsPeers = peers;
-                invalidateState();
+                nextShowWillForceRefresh = true;
+                dismiss(true);
+                return;
+            }
 
-                if (reloadPeersAfterLoading) {
-                    reloadPeersAfterLoading = false;
-                    loadSendAsPeers();
-                }
+            TLRPC.TL_channels_sendAsPeers peers = (TLRPC.TL_channels_sendAsPeers) response;
+
+            loadingPeers = false;
+            availableSendAsPeers = peers;
+            invalidateState();
+
+            if (reloadPeersAfterLoading) {
+                reloadPeersAfterLoading = false;
+                loadSendAsPeers();
             }
         }));
     }
