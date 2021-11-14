@@ -12603,6 +12603,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         //Flag secure
         invalidateFlagSecure();
+
+        //Hide message popup menu
+        if(scrimPopupWindow != null) {
+            scrimPopupWindow.dismiss();
+        }
     }
 
     private boolean canForwardSelection() {
