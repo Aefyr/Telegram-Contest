@@ -84,6 +84,7 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
     private boolean checkEnterItems;
 
 
+    Calendar startFromCalendar;
     int startFromYear;
     int startFromMonth;
     int monthCount;
@@ -411,9 +412,9 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
 
         fragmentView = contentView;
 
-        Calendar calendar = Calendar.getInstance();
-        startFromYear = calendar.get(Calendar.YEAR);
-        startFromMonth = calendar.get(Calendar.MONTH);
+        startFromCalendar = Calendar.getInstance();
+        startFromYear = startFromCalendar.get(Calendar.YEAR);
+        startFromMonth = startFromCalendar.get(Calendar.MONTH);
 
         if (selectedYear != 0) {
             monthCount = (startFromYear - selectedYear) * 12 + startFromMonth - selectedMonth + 1;
@@ -728,7 +729,7 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
                     checkEnterItems = true;
                 }
                 listView.invalidate();
-                int newMonthCount = (int) (((calendar.getTimeInMillis() / 1000) - res.min_date) / 2629800) + 1;
+                int newMonthCount = (int) (((startFromCalendar.getTimeInMillis() / 1000) - res.min_date) / 2629800) + 1;
                 adapter.notifyItemRangeChanged(0, monthCount);
                 if (newMonthCount > monthCount) {
                     adapter.notifyItemRangeInserted(monthCount + 1, newMonthCount);
