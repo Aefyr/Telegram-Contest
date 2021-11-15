@@ -996,8 +996,9 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
                 RectF hitbox = new RectF(xStep * currentColumn, yStep * currentCell + AndroidUtilities.dp(44), xStep * currentColumn + xStep, yStep * currentCell + yStep + AndroidUtilities.dp(44));
                 dayHitboxes.put(currentDayInMonth, hitbox);
                 int nowTime = (int) (System.currentTimeMillis() / 1000L);
-                boolean isFirstColumn = currentColumn == 0;
-                boolean isLastColumn = currentColumn == 6;
+                boolean isFirstColumn = i == 0 || currentColumn == 0;
+                boolean isLastColumn = currentColumn == 6 || i == daysInMonth - 1;
+                boolean isSingleColumn = isFirstColumn && isLastColumn;
 
                 boolean isSelected;
                 if (hasSelection) {
@@ -1013,36 +1014,61 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
                 boolean isSingleSelection = isSelectionStart && isSelectionEnd;
 
                 if (isSelected) {
+                    //Draw selection highlight
                     if (!isSingleSelection) {
-                        selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
-                        selectionIndicatorPaint.setAlpha(64);
-                        selectionIndicatorPaint.setStyle(Paint.Style.FILL);
-                        canvas.drawRect(xStep * currentColumn, cy - AndroidUtilities.dp(24), xStep * currentColumn + xStep, cy + AndroidUtilities.dp(24), selectionIndicatorPaint);
+                        if (isSingleColumn) {
+                            selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
+                            selectionIndicatorPaint.setAlpha(64);
+                            selectionIndicatorPaint.setStyle(Paint.Style.FILL);
+                            eraserPaint.setStyle(Paint.Style.FILL);
+                            canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        } else if (isFirstColumn) {
+                            selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
+                            selectionIndicatorPaint.setAlpha(64);
+                            selectionIndicatorPaint.setStyle(Paint.Style.FILL);
+                            eraserPaint.setStyle(Paint.Style.FILL);
+                            canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                            canvas.drawRect(cx, cy - AndroidUtilities.dp(22), xStep * currentColumn + xStep, cy + AndroidUtilities.dp(22), eraserPaint);
+                            canvas.drawRect(cx, cy - AndroidUtilities.dp(22), xStep * currentColumn + xStep, cy + AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        } else if (isLastColumn) {
+                            selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
+                            selectionIndicatorPaint.setAlpha(64);
+                            selectionIndicatorPaint.setStyle(Paint.Style.FILL);
+                            canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                            canvas.drawRect(xStep * currentColumn - 1, cy - AndroidUtilities.dp(22), cx, cy + AndroidUtilities.dp(22), eraserPaint);
+                            canvas.drawRect(xStep * currentColumn - 1, cy - AndroidUtilities.dp(22), cx, cy + AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        } else {
+                            selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
+                            selectionIndicatorPaint.setAlpha(64);
+                            selectionIndicatorPaint.setStyle(Paint.Style.FILL);
+                            canvas.drawRect(xStep * currentColumn, cy - AndroidUtilities.dp(22), xStep * currentColumn + xStep, cy + AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        }
                     }
 
+                    //Draw selection start/end
                     if (isSingleSelection) {
                         selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
                         selectionIndicatorPaint.setAlpha(255);
                         selectionIndicatorPaint.setStyle(Paint.Style.STROKE);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(20), selectionIndicatorPaint);
                     } else if (isSelectionStart) {
                         eraserPaint.setStyle(Paint.Style.FILL);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(23), eraserPaint);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(21), eraserPaint);
                         canvas.drawRect(xStep * currentColumn - 1f, cy - AndroidUtilities.dp(24) - 1f, cx + 1f, cy + AndroidUtilities.dp(24) + 1f, eraserPaint);
 
                         selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
                         selectionIndicatorPaint.setAlpha(255);
                         selectionIndicatorPaint.setStyle(Paint.Style.STROKE);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(20), selectionIndicatorPaint);
                     } else if (isSelectionEnd) {
                         eraserPaint.setStyle(Paint.Style.FILL);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(23), eraserPaint);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(21), eraserPaint);
                         canvas.drawRect(cx - 1f, cy - AndroidUtilities.dp(24) - 1f, xStep * currentColumn + xStep + 1f, cy + AndroidUtilities.dp(24) + 1f, eraserPaint);
 
                         selectionIndicatorPaint.setColor(Theme.getColor(Theme.key_checkboxSquareBackground));
                         selectionIndicatorPaint.setAlpha(255);
                         selectionIndicatorPaint.setStyle(Paint.Style.STROKE);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(20), selectionIndicatorPaint);
                     }
                 }
 
@@ -1081,11 +1107,11 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
                             canvas.scale(s, s, cx, cy);
                         } else if (isSelected) {
                             canvas.save();
-                            canvas.scale(0.86f, 0.86f, cx, cy);
+                            canvas.scale(0.78f, 0.78f, cx, cy);
                         }
 
                         imagesByDays.get(i).setAlpha(messagesByDays.get(i).enterAlpha);
-                        imagesByDays.get(i).setImageCoords(cx - AndroidUtilities.dp(44) / 2f, cy - AndroidUtilities.dp(44) / 2f, AndroidUtilities.dp(44), AndroidUtilities.dp(44));
+                        imagesByDays.get(i).setImageCoords(cx - AndroidUtilities.dp(42) / 2f, cy - AndroidUtilities.dp(42) / 2f, AndroidUtilities.dp(42), AndroidUtilities.dp(42));
                         imagesByDays.get(i).draw(canvas);
                         blackoutPaint.setColor(ColorUtils.setAlphaComponent(Color.BLACK, (int) (messagesByDays.get(i).enterAlpha * 80)));
                         canvas.drawCircle(cx, cy, AndroidUtilities.dp(44) / 2f, blackoutPaint);
@@ -1119,8 +1145,8 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
                         selectionIndicatorPaint.setAlpha(255);
                         selectionIndicatorPaint.setStyle(Paint.Style.FILL);
                         canvas.save();
-                        canvas.scale(0.82f, 0.82f, cx, cy);
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(23), selectionIndicatorPaint);
+                        canvas.scale(0.74f, 0.74f, cx, cy);
+                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(22), selectionIndicatorPaint);
                         canvas.restore();
 
                         canvas.drawText(Integer.toString(i + 1), cx, cy + AndroidUtilities.dp(5), boldActiveTextPaint);
