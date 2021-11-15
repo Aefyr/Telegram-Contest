@@ -338,7 +338,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     datePressed = false;
                     if (delegate != null) {
-                        delegate.didClickDate(customDate, isDateScheduled);
+                        delegate.didClickDate(currentMessageObject.date, isDateScheduled);
                         playSoundEffect(SoundEffectConstants.CLICK);
                     }
                 } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {

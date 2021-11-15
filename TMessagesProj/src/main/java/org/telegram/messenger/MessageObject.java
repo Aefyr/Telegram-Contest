@@ -93,6 +93,7 @@ public class MessageObject {
     private int isRoundVideoCached;
     public long eventId;
     public int contentType;
+    public int date;
     public String dateKey;
     public String monthKey;
     public boolean deleted;
@@ -937,6 +938,7 @@ public class MessageObject {
         int dateMonth = rightNow.get(Calendar.MONTH);
         dateKey = String.format("%d_%02d_%02d", dateYear, dateMonth, dateDay);
         monthKey = String.format("%d_%02d", dateYear, dateMonth);
+        date = messageOwner.date;
 
         createMessageSendInfo();
         generateCaption();
@@ -1095,6 +1097,7 @@ public class MessageObject {
         int dateMonth = rightNow.get(Calendar.MONTH);
         dateKey = String.format("%d_%02d_%02d", dateYear, dateMonth, dateDay);
         monthKey = String.format("%d_%02d", dateYear, dateMonth);
+        date = event.date;
 
         TLRPC.Peer peer_id = new TLRPC.TL_peerChannel();
         peer_id.channel_id = chat.id;
