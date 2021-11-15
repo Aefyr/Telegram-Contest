@@ -5119,9 +5119,11 @@ public class MessagesController extends BaseController implements NotificationCe
                 TLRPC.TL_messages_affectedHistory res = (TLRPC.TL_messages_affectedHistory) response;
                 if (res.offset > 0) {
                     deleteMessagesRange(did, minDate, maxDate, deleteForOthers);
+                } else {
+                    getMessagesStorage().deleteMessagesInDialogByDate(did, minDate, maxDate);
                 }
-                //TODO Delete local messages manually instead of bullying the server. But I'm not doing it now, have you seen MessagesStorage class??
-                processNewDifferenceParams(-1, res.pts, -1, 0);
+
+                processNewDifferenceParams(-1, res.pts, -1, res.pts_count);
             }
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }

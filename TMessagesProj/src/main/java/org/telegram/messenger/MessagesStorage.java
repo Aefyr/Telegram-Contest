@@ -3601,6 +3601,49 @@ public class MessagesStorage extends BaseController {
         });
     }
 
+    public void deleteMessagesInDialogByDate(long dialogId, int minDate, int maxDate) {
+        storageQueue.postRunnable(() -> {
+            try {
+                ArrayList<Integer> mids = new ArrayList<>();
+                SQLiteCursor cursor = database.queryFinalized("SELECT data FROM messages_v2 WHERE uid = " + dialogId + " AND date >= " + minDate + " AND date <= " + maxDate);
+                ArrayList<File> filesToDelete = new ArrayList<>();
+                ArrayList<String> namesToDelete = new ArrayList<>();
+                ArrayList<Pair<Long, Integer>> idsToDelete = new ArrayList<>();
+                try {
+                    while (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                            if (message != null) {
+                                message.readAttachPath(data, getUserConfig().clientUserId);
+                                mids.add(message.id);
+                                addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
+                            }
+                            data.reuse();
+                        }
+                    }
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+                cursor.dispose();
+                deleteFromDownloadQueue(idsToDelete, true);
+                AndroidUtilities.runOnUIThread(() -> {
+                    getFileLoader().cancelLoadFiles(namesToDelete);
+                    getMessagesController().markDialogMessageAsDeleted(dialogId, mids);
+                });
+                markMessagesAsDeletedInternal(dialogId, mids, false, false);
+
+                updateDialogsWithDeletedMessagesInternal(dialogId, DialogObject.isChatDialog(dialogId) ? -dialogId : 0, mids, null);
+                getFileLoader().deleteFiles(filesToDelete, 0);
+                if (!mids.isEmpty()) {
+                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, mids, DialogObject.isChatDialog(dialogId) ? -dialogId : 0, false));
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
     private boolean addFilesToDelete(TLRPC.Message message, ArrayList<File> filesToDelete, ArrayList<Pair<Long, Integer>> ids, ArrayList<String> namesToDelete, boolean forceCache) {
         if (message == null) {
             return false;
