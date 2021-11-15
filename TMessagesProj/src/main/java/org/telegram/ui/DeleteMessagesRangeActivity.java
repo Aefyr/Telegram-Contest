@@ -173,8 +173,8 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
         activeTextPaint.setTextAlign(Paint.Align.CENTER);
 
         boldActiveTextPaint.setTextSize(AndroidUtilities.dp(16));
-        boldActiveTextPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         boldActiveTextPaint.setTextAlign(Paint.Align.CENTER);
+        boldActiveTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
         contentView = new FrameLayout(context);
         createActionBar(context);
