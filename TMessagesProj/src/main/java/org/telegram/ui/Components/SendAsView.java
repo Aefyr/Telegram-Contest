@@ -11,6 +11,8 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,7 +31,6 @@ import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
@@ -37,9 +38,7 @@ import org.telegram.ui.Cells.TextDetailCell;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SendAsView extends FrameLayout {
 
@@ -66,8 +65,11 @@ public class SendAsView extends FrameLayout {
     private RecyclerListView recycler;
 
     private AnimatorSet visibilityAnimation = new AnimatorSet();
+    private boolean stateApplyDeferredToAfterVisibilityAnimation = false;
 
     private boolean isShown = true;
+
+    private Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
     public SendAsView(@NonNull Context context, int currentAccount, TLRPC.Chat currentChat) {
         super(context);
@@ -99,7 +101,7 @@ public class SendAsView extends FrameLayout {
             private float sizeAnimationProgress = 0f;
             private boolean animatingSize = false;
             private long lastSizeAnimationUpdate;
-            private long sizeAnimationDurationMillis = 180;
+            private long sizeAnimationDurationMillis = 200;
 
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -227,18 +229,13 @@ public class SendAsView extends FrameLayout {
 
     private void invalidateState() {
         if (loadingPeers) {
-            AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, true);
-            AndroidUtilities.updateViewVisibilityAnimated(recycler, false);
-            recycler.setEnabled(false);
+            applyStateToView();
             return;
         }
 
-        AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, false);
-        AndroidUtilities.updateViewVisibilityAnimated(recycler, true);
-        recycler.setEnabled(true);
-
         if (availableSendAsPeers == null) {
-            sendAsPeerAdapter.setPeers(null);
+            sendAsPeers = Collections.emptyList();
+            applyStateToView();
             return;
         }
 
@@ -263,8 +260,29 @@ public class SendAsView extends FrameLayout {
             }
         }
 
+        applyStateToView();
+    }
+
+    private void applyStateToView() {
+        if (visibilityAnimation != null) {
+            recycler.setEnabled(false);
+            stateApplyDeferredToAfterVisibilityAnimation = true;
+            return;
+        }
+
+        if (loadingPeers) {
+            AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, true);
+            AndroidUtilities.updateViewVisibilityAnimated(recycler, false);
+            recycler.setEnabled(false);
+            return;
+        }
+
+        AndroidUtilities.updateViewVisibilityAnimated(flickerLoadingView, false);
+        AndroidUtilities.updateViewVisibilityAnimated(recycler, true);
+        recycler.setEnabled(true);
+
         sendAsPeerAdapter.setPeers(sendAsPeers);
-        flickerLoadingView.setItemsCount(sendAsPeers.size());
+        flickerLoadingView.setItemsCount(sendAsPeers != null && sendAsPeers.size() > 0 ? sendAsPeers.size() : 3);
     }
 
     public void setSelectedSendAsPeer(TLRPC.Peer peer) {
@@ -280,11 +298,14 @@ public class SendAsView extends FrameLayout {
 
         loadingPeers = true;
         //Debounce loading
-        AndroidUtilities.runOnUIThread(this::invalidateState, 200);
+        Runnable debouncedLoading = () -> this.invalidateState();
+        mainThreadHandler.postDelayed(debouncedLoading, 200);
 
         MessagesController.getInstance(currentAccount).getSendAsPeers(currentChat, new MessagesController.SendAsPeersLoadedCallback() {
             @Override
             public void onSendAsPeersLoaded(List<TLRPC.Peer> peers) {
+                mainThreadHandler.removeCallbacks(debouncedLoading);
+
                 loadingPeers = false;
                 availableSendAsPeers = peers;
                 invalidateState();
@@ -297,6 +318,8 @@ public class SendAsView extends FrameLayout {
 
             @Override
             public void onError(TLRPC.TL_error error) {
+                mainThreadHandler.removeCallbacks(debouncedLoading);
+
                 loadingPeers = false;
                 nextShowWillForceRefresh = true;
                 dismiss(true);
@@ -329,15 +352,18 @@ public class SendAsView extends FrameLayout {
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_X, 0f, 1f),
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_Y, 0f, 1f),
                     ObjectAnimator.ofFloat(this, View.ALPHA, 0f, 1f));
-            visibilityAnimation.setDuration(180);
+            visibilityAnimation.setDuration(200);
             visibilityAnimation.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     visibilityAnimation = null;
+                    applyStateIfItWasDeferredToAfterVisibilityAnimation();
                 }
             });
             visibilityAnimation.setInterpolator(decelerateInterpolator);
             visibilityAnimation.start();
+        } else {
+            applyStateIfItWasDeferredToAfterVisibilityAnimation();
         }
     }
 
@@ -364,23 +390,32 @@ public class SendAsView extends FrameLayout {
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_X, 0f),
                     ObjectAnimator.ofFloat(wrappedFakePopupLayout, View.SCALE_Y, 0f),
                     ObjectAnimator.ofFloat(this, View.ALPHA, 0f));
-            visibilityAnimation.setDuration(180);
+            visibilityAnimation.setDuration(200);
             visibilityAnimation.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     setVisibility(View.GONE);
                     visibilityAnimation = null;
+                    applyStateIfItWasDeferredToAfterVisibilityAnimation();
                 }
             });
             visibilityAnimation.setInterpolator(decelerateInterpolator);
             visibilityAnimation.start();
         } else {
             setVisibility(View.GONE);
+            applyStateIfItWasDeferredToAfterVisibilityAnimation();
         }
     }
 
     public boolean isShown() {
         return isShown;
+    }
+
+    private void applyStateIfItWasDeferredToAfterVisibilityAnimation() {
+        if (stateApplyDeferredToAfterVisibilityAnimation) {
+            stateApplyDeferredToAfterVisibilityAnimation = false;
+            applyStateToView();
+        }
     }
 
     private static class SendAsPeerAdapter extends RecyclerListView.SelectionAdapter {
