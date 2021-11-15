@@ -5101,7 +5101,7 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
-    public void deleteMessagesRange(long did, int minDate, int maxDate, boolean deleteForOthers) {
+    public void deleteMessagesRange(long did, int minDate, int maxDate, boolean deleteForOthers, Runnable successCallback) {
         TLRPC.InputPeer peer = getInputPeer(did);
 
         TLRPC.TL_messages_deleteHistory req = new TLRPC.TL_messages_deleteHistory();
@@ -5118,9 +5118,10 @@ public class MessagesController extends BaseController implements NotificationCe
             if (error == null) {
                 TLRPC.TL_messages_affectedHistory res = (TLRPC.TL_messages_affectedHistory) response;
                 if (res.offset > 0) {
-                    deleteMessagesRange(did, minDate, maxDate, deleteForOthers);
+                    deleteMessagesRange(did, minDate, maxDate, deleteForOthers, successCallback);
                 } else {
                     getMessagesStorage().deleteMessagesInDialogByDate(did, minDate, maxDate);
+                    AndroidUtilities.runOnUIThread(successCallback);
                 }
 
                 processNewDifferenceParams(-1, res.pts, -1, res.pts_count);

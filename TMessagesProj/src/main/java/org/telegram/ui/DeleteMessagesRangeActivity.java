@@ -56,7 +56,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DeleteMessagesRangeActivity extends BaseFragment {
@@ -771,7 +773,88 @@ public class DeleteMessagesRangeActivity extends BaseFragment {
         Calendar toCalendar = Calendar.getInstance();
         toCalendar.set(selectionToYear, selectionToMonth, selectionToDay, 23, 59, 59);
 
-        MessagesController.getInstance(currentAccount).deleteMessagesRange(dialogId, (int) (fromCalendar.getTimeInMillis() / 1000L), (int) (toCalendar.getTimeInMillis() / 1000L), deleteForOthers);
+        int finalFromYear = selectionFromYear;
+        int finalFromMonth = selectionFromMonth;
+        int finalFromDay = selectionFromDay;
+
+        int finalToYear = selectionToYear;
+        int finalToMonth = selectionToMonth;
+        int finalToDay = selectionToDay;
+        MessagesController.getInstance(currentAccount).deleteMessagesRange(dialogId, (int) (fromCalendar.getTimeInMillis() / 1000L), (int) (toCalendar.getTimeInMillis() / 1000L), deleteForOthers, () -> {
+
+            Set<Integer> monthKeysToRemove = new HashSet<>();
+            for (int i = 0; i < messagesByYearMounth.size(); i++) {
+                int monthKey = messagesByYearMounth.keyAt(i);
+                int fromMonthKey = finalFromYear * 100 + finalFromMonth;
+                int toMonthKey = finalToYear * 100 + finalToMonth;
+
+                if (monthKey > fromMonthKey && monthKey < toMonthKey) {
+                    monthKeysToRemove.add(monthKey);
+                } else if (monthKey == fromMonthKey && monthKey == toMonthKey) {
+                    SparseArray<PeriodDay> messagesByDay = messagesByYearMounth.get(monthKey);
+                    if (messagesByDay == null) {
+                        continue;
+                    }
+
+                    Set<Integer> dayKeysToRemove = new HashSet<>();
+                    for (int b = 0; b < messagesByDay.size(); b++) {
+                        int dayKey = messagesByDay.keyAt(b);
+
+                        if (dayKey >= finalFromDay - 1 && dayKey <= finalToDay - 1) {
+                            dayKeysToRemove.add(dayKey);
+                        }
+                    }
+
+                    for (Integer dayKeyToRemove : dayKeysToRemove) {
+                        messagesByDay.remove(dayKeyToRemove);
+                    }
+                } else if (monthKey == fromMonthKey) {
+                    SparseArray<PeriodDay> messagesByDay = messagesByYearMounth.get(monthKey);
+                    if (messagesByDay == null) {
+                        continue;
+                    }
+
+                    Set<Integer> dayKeysToRemove = new HashSet<>();
+                    for (int b = 0; b < messagesByDay.size(); b++) {
+                        int dayKey = messagesByDay.keyAt(b);
+
+                        if (dayKey >= finalFromDay - 1) {
+                            dayKeysToRemove.add(dayKey);
+                        }
+                    }
+
+                    for (Integer dayKeyToRemove : dayKeysToRemove) {
+                        messagesByDay.remove(dayKeyToRemove);
+                    }
+                } else if (monthKey == toMonthKey) {
+                    SparseArray<PeriodDay> messagesByDay = messagesByYearMounth.get(monthKey);
+                    if (messagesByDay == null) {
+                        continue;
+                    }
+
+                    Set<Integer> dayKeysToRemove = new HashSet<>();
+                    for (int b = 0; b < messagesByDay.size(); b++) {
+                        int dayKey = messagesByDay.keyAt(b);
+
+                        if (dayKey <= finalToDay - 1) {
+                            dayKeysToRemove.add(dayKey);
+                        }
+                    }
+
+                    for (Integer dayKeyToRemove : dayKeysToRemove) {
+                        messagesByDay.remove(dayKeyToRemove);
+                    }
+                }
+            }
+
+            for (Integer monthKeyToRemove : monthKeysToRemove) {
+                messagesByYearMounth.remove(monthKeyToRemove);
+            }
+
+            adapter.notifyDataSetChanged();
+        });
+
+
     }
 
     private class CalendarAdapter extends RecyclerView.Adapter {
