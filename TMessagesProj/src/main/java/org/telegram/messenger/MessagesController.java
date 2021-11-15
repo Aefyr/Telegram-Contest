@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -9170,6 +9171,28 @@ public class MessagesController extends BaseController implements NotificationCe
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
+    public void getSendAsPeers(TLRPC.Chat chat, SendAsPeersLoadedCallback callback) {
+        TLRPC.TL_channels_getSendAs request = new TLRPC.TL_channels_getSendAs();
+        request.peer = getInputPeer(chat);
+
+        ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) ->  {
+            AndroidUtilities.runOnUIThread(() -> {
+                if (error != null) {
+                    callback.onError(error);
+                    return;
+                }
+
+                TLRPC.TL_channels_sendAsPeers peers = (TLRPC.TL_channels_sendAsPeers) response;
+
+                putChats(peers.chats, false);
+                putUsers(peers.users, false);
+                getMessagesStorage().putUsersAndChats(peers.users, peers.chats, true, true);
+
+                callback.onSendAsPeersLoaded(peers.peers);
+            });
+        });
+    }
+
     public void setDefaultSendAs(long chatId, TLRPC.Peer defaultSendAsPeer) {
         TLRPC.TL_messages_saveDefaultSendAs  req = new TLRPC.TL_messages_saveDefaultSendAs();
         req.peer = getInputPeer(-chatId);
@@ -14686,5 +14709,12 @@ public class MessagesController extends BaseController implements NotificationCe
     public interface MessagesLoadedCallback {
         void onMessagesLoaded(boolean fromCache);
         void onError();
+    }
+
+    public interface SendAsPeersLoadedCallback {
+
+        void onSendAsPeersLoaded(List<TLRPC.Peer> sendAsPeers);
+
+        void onError(TLRPC.TL_error error);
     }
 }

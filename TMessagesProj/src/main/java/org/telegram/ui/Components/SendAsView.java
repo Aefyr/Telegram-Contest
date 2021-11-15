@@ -51,7 +51,7 @@ public class SendAsView extends FrameLayout {
     private SendAsPeerAdapter sendAsPeerAdapter;
 
     private TLRPC.Peer selectedSendAsPeer;
-    TLRPC.TL_channels_sendAsPeers availableSendAsPeers;
+    List<TLRPC.Peer> availableSendAsPeers;
 
     List<SendAsPeer> sendAsPeers = Collections.emptyList();
 
@@ -242,29 +242,21 @@ public class SendAsView extends FrameLayout {
             return;
         }
 
-        Map<Long, TLRPC.Chat> chats = new HashMap<>();
-        for (TLRPC.Chat chat : availableSendAsPeers.chats) {
-            chats.put(chat.id, chat);
-        }
-        Map<Long, TLRPC.User> users = new HashMap<>();
-        for (TLRPC.User user : availableSendAsPeers.users) {
-            users.put(user.id, user);
-        }
-
         sendAsPeers = new ArrayList<>();
-        for (TLRPC.Peer peer : availableSendAsPeers.peers) {
+        MessagesController messagesController = MessagesController.getInstance(currentAccount);
+        for (TLRPC.Peer peer : availableSendAsPeers) {
             if (peer.channel_id != 0) {
-                TLRPC.Chat chat = chats.get(peer.channel_id);
+                TLRPC.Chat chat = messagesController.getChat(peer.channel_id);
                 if (chat != null) {
                     sendAsPeers.add(new ChatSendAsPeer(peer, selectedSendAsPeer != null && selectedSendAsPeer.channel_id == peer.channel_id, chat));
                 }
             } else if (peer.chat_id != 0) {
-                TLRPC.Chat chat = chats.get(peer.chat_id);
+                TLRPC.Chat chat = messagesController.getChat(peer.chat_id);
                 if (chat != null) {
                     sendAsPeers.add(new ChatSendAsPeer(peer, selectedSendAsPeer != null && selectedSendAsPeer.chat_id == peer.chat_id, chat));
                 }
             } else {
-                TLRPC.User user = users.get(peer.user_id);
+                TLRPC.User user = messagesController.getUser(peer.user_id);
                 if (user != null) {
                     sendAsPeers.add(new UserSendAsPeer(peer, selectedSendAsPeer != null && selectedSendAsPeer.user_id == peer.user_id, user));
                 }
@@ -290,28 +282,26 @@ public class SendAsView extends FrameLayout {
         //Debounce loading
         AndroidUtilities.runOnUIThread(this::invalidateState, 200);
 
-        TLRPC.TL_channels_getSendAs request = new TLRPC.TL_channels_getSendAs();
-        request.peer = MessagesController.getInputPeer(currentChat);
+        MessagesController.getInstance(currentAccount).getSendAsPeers(currentChat, new MessagesController.SendAsPeersLoadedCallback() {
+            @Override
+            public void onSendAsPeersLoaded(List<TLRPC.Peer> peers) {
+                loadingPeers = false;
+                availableSendAsPeers = peers;
+                invalidateState();
 
-        ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (error != null) {
+                if (reloadPeersAfterLoading) {
+                    reloadPeersAfterLoading = false;
+                    loadSendAsPeers();
+                }
+            }
+
+            @Override
+            public void onError(TLRPC.TL_error error) {
                 loadingPeers = false;
                 nextShowWillForceRefresh = true;
                 dismiss(true);
-                return;
             }
-
-            TLRPC.TL_channels_sendAsPeers peers = (TLRPC.TL_channels_sendAsPeers) response;
-
-            loadingPeers = false;
-            availableSendAsPeers = peers;
-            invalidateState();
-
-            if (reloadPeersAfterLoading) {
-                reloadPeersAfterLoading = false;
-                loadSendAsPeers();
-            }
-        }));
+        });
     }
 
     public void show(boolean refresh, boolean animate) {
